@@ -47,7 +47,7 @@ Game.Scenes.Settings = (function () {
               typingMode: form.elements.typingMode.checked,
               soundEnabled: form.elements.soundEnabled.checked,
               reducedMotion: form.elements.reducedMotion.checked,
-              timerMultiplier: Game.Main.normalizeTimerMultiplier(form.elements.timerMultiplier.value, s.settings.timerMultiplier)
+              timerMultiplier: Game.Data.GameSettings.normalizeTimerMultiplier(form.elements.timerMultiplier.value, s.settings.timerMultiplier)
             })
           });
         });
