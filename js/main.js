@@ -95,13 +95,7 @@ Game.Main = (function () {
         hintsUsed: 0,
         sessionsPlayed: 0
       },
-      settings: {
-        typingMode: cfg.settings.typingMode,
-        soundEnabled: cfg.settings.soundEnabled,
-        reducedMotion: !!cfg.settings.reducedMotion,
-        timerMultiplier: cfg.quiz.defaultTimerMultiplier,
-        lastSavedAt: Date.now()
-      },
+      settings: Object.assign({}, Game.Data.GameSettings.defaults(), { lastSavedAt: Date.now() }),
       ui: {
         currentScene: 'title',
         overlayScene: null,
@@ -283,21 +277,11 @@ Game.Main = (function () {
   }
 
   function normalizeSettings(value, fallback) {
-    const settings = value && typeof value === 'object' ? value : {};
-    const timerMultiplier = normalizeTimerMultiplier(settings.timerMultiplier, fallback.timerMultiplier);
-    return {
-      typingMode: typeof settings.typingMode === 'boolean' ? settings.typingMode : fallback.typingMode,
-      soundEnabled: typeof settings.soundEnabled === 'boolean' ? settings.soundEnabled : fallback.soundEnabled,
-      reducedMotion: typeof settings.reducedMotion === 'boolean' ? settings.reducedMotion : fallback.reducedMotion,
-      timerMultiplier,
-      lastSavedAt: normalizeNumber(settings.lastSavedAt, fallback.lastSavedAt, 0)
-    };
+    return Game.Data.GameSettings.normalize(value, fallback);
   }
 
   function normalizeTimerMultiplier(value, fallback) {
-    const number = Number(value);
-    const allowed = config().quiz.timerOptions.map(function map(option) { return option.value; });
-    return allowed.includes(number) ? number : fallback;
+    return Game.Data.GameSettings.normalizeTimerMultiplier(value, fallback);
   }
 
   function normalizePlayerName(value) {
