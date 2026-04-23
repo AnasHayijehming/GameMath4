@@ -95,13 +95,7 @@ Game.Main = (function () {
         hintsUsed: 0,
         sessionsPlayed: 0
       },
-      settings: {
-        typingMode: cfg.settings.typingMode,
-        soundEnabled: cfg.settings.soundEnabled,
-        reducedMotion: !!cfg.settings.reducedMotion,
-        timerMultiplier: cfg.quiz.defaultTimerMultiplier,
-        lastSavedAt: Date.now()
-      },
+      settings: Game.Data.GameSettings.defaults(),
       ui: {
         currentScene: 'title',
         overlayScene: null,
@@ -197,7 +191,7 @@ Game.Main = (function () {
       npcsCompleted: normalizeStringArray(raw.npcsCompleted, fallback.npcsCompleted),
       bossDefeated: normalizeStringArray(raw.bossDefeated, fallback.bossDefeated),
       stats: normalizeStats(raw.stats, fallback.stats),
-      settings: normalizeSettings(raw.settings, fallback.settings),
+      settings: Game.Data.GameSettings.normalize(raw.settings, fallback.settings),
       ui: {
         currentScene: 'overworld',
         overlayScene: null,
@@ -282,23 +276,6 @@ Game.Main = (function () {
     };
   }
 
-  function normalizeSettings(value, fallback) {
-    const settings = value && typeof value === 'object' ? value : {};
-    const timerMultiplier = normalizeTimerMultiplier(settings.timerMultiplier, fallback.timerMultiplier);
-    return {
-      typingMode: typeof settings.typingMode === 'boolean' ? settings.typingMode : fallback.typingMode,
-      soundEnabled: typeof settings.soundEnabled === 'boolean' ? settings.soundEnabled : fallback.soundEnabled,
-      reducedMotion: typeof settings.reducedMotion === 'boolean' ? settings.reducedMotion : fallback.reducedMotion,
-      timerMultiplier,
-      lastSavedAt: normalizeNumber(settings.lastSavedAt, fallback.lastSavedAt, 0)
-    };
-  }
-
-  function normalizeTimerMultiplier(value, fallback) {
-    const number = Number(value);
-    const allowed = config().quiz.timerOptions.map(function map(option) { return option.value; });
-    return allowed.includes(number) ? number : fallback;
-  }
 
   function normalizePlayerName(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -337,7 +314,6 @@ Game.Main = (function () {
     createDefaultState,
     hydrateSavedState,
     normalizePlayerName,
-    validatePlayerName,
-    normalizeTimerMultiplier
+    validatePlayerName
   });
 })();
