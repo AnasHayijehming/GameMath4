@@ -6,6 +6,27 @@ Game.Scenes.Settings = (function () {
 
   let message = '';
 
+  function readSettingsForm(form, previousSettings) {
+    return {
+      typingMode: form.elements.typingMode.checked,
+      soundEnabled: form.elements.soundEnabled.checked,
+      reducedMotion: form.elements.reducedMotion.checked,
+      timerMultiplier: Game.Data.GameSettings.normalizeTimerMultiplier(
+        form.elements.timerMultiplier.value,
+        previousSettings.timerMultiplier
+      )
+    };
+  }
+
+  function applySettings(nextSettings) {
+    Game.State.update(function update(state) {
+      return Object.assign({}, state, {
+        settings: Object.assign({}, state.settings, nextSettings)
+      });
+    });
+    Game.Storage.save(Game.State.get());
+  }
+
   const scene = {
     id: 'settings',
     enter() { message = ''; },
@@ -41,17 +62,9 @@ Game.Scenes.Settings = (function () {
       const form = root.querySelector('[data-settings-form]');
       form.addEventListener('submit', function onSubmit(event) {
         event.preventDefault();
-        Game.State.update(function update(s) {
-          return Object.assign({}, s, {
-            settings: Object.assign({}, s.settings, {
-              typingMode: form.elements.typingMode.checked,
-              soundEnabled: form.elements.soundEnabled.checked,
-              reducedMotion: form.elements.reducedMotion.checked,
-              timerMultiplier: Game.Data.GameSettings.normalizeTimerMultiplier(form.elements.timerMultiplier.value, s.settings.timerMultiplier)
-            })
-          });
-        });
-        Game.Storage.save(Game.State.get());
+        const previousSettings = Game.State.get().settings;
+        const nextSettings = readSettingsForm(form, previousSettings);
+        applySettings(nextSettings);
         message = 'บันทึกแล้ว';
         Game.SceneManager.requestRender();
       });
