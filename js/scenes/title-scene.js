@@ -10,7 +10,8 @@ Game.Scenes.Title = (function () {
     exit() {},
     render() {
       const hasSave = Game.Storage.exists();
-      return `<div class="screen screen--forest">
+      const titleBg = Game.Render.AssetLoader.titleBackground();
+      return `<div class="screen screen--forest" style="background-image:linear-gradient(rgba(24,33,43,.52), rgba(24,33,43,.52)), url('${titleBg}'); background-size:cover; background-position:center;">
         <div class="title-stage">
           <div class="title-art">${Game.Render.SVG.titleArt()}</div>
           <section class="title-copy">

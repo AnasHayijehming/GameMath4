@@ -1642,3 +1642,63 @@ if (window.location.hash === '#debug') {
 > 4. Integration test เอง (manual) ตาม checklist section 20.2
 >
 > ถ้าเจอจุดที่ spec หรือ design ไม่ครอบคลุม ให้ถามก่อน implement อย่าเดาเอง
+
+---
+
+## 21. AI Art Asset Generation & Loading
+
+### 21.1 Generation script
+
+- Script: `tools/generate-art.js`
+- Model: `gpt-image-2`
+- Input: fixed prompt set covering:
+  - title background
+  - zone backgrounds
+  - tile textures
+  - NPC portraits
+  - item icons
+  - UI panel/button textures
+- Output paths are read from `assets/manifest.json` and written deterministically.
+
+### 21.2 Deterministic asset structure
+
+```
+assets/
+  ui/
+  zones/
+    forest/
+    city/
+    castle/
+  npcs/
+  items/
+  manifest.json
+```
+
+### 21.3 Manifest contract
+
+`assets/manifest.json` stores stable keys (e.g. `title_bg`, `zone_forest_tile_grass`, `npc_castle_boss`) mapped to file paths. Runtime code should reference keys rather than hardcoded filenames when possible.
+
+### 21.4 Runtime loader & fallback behavior
+
+- Module: `js/render/asset-loader.js`
+- Responsibilities:
+  - fetch manifest at startup
+  - resolve keys to URLs
+  - provide zone/title helpers
+  - return inline SVG placeholder for missing keys
+  - maintain `<link rel="preload">` tags for critical art (title + current zone)
+
+### 21.5 Regeneration workflow
+
+```bash
+export OPENAI_API_KEY="..."
+node tools/generate-art.js
+```
+
+### 21.6 Style constraints for visual consistency
+
+Prompts should always include shared constraints:
+- kid-safe educational fantasy style
+- consistent bright palette
+- no embedded text/logos/watermarks
+- high readability silhouettes
