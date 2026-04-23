@@ -18,6 +18,8 @@ Game.Main = (function () {
     Game.Systems.Economy.init();
     Game.Systems.Progression.init();
     Game.Systems.Audio.init();
+    Game.Render.HUD.init();
+    Game.Render.FX.init();
 
     Game.SceneManager.init();
     [
@@ -88,6 +90,7 @@ Game.Main = (function () {
       settings: {
         typingMode: cfg.settings.typingMode,
         soundEnabled: cfg.settings.soundEnabled,
+        reducedMotion: !!cfg.settings.reducedMotion,
         timerMultiplier: cfg.quiz.defaultTimerMultiplier,
         lastSavedAt: Date.now()
       },
@@ -277,6 +280,7 @@ Game.Main = (function () {
     return {
       typingMode: typeof settings.typingMode === 'boolean' ? settings.typingMode : fallback.typingMode,
       soundEnabled: typeof settings.soundEnabled === 'boolean' ? settings.soundEnabled : fallback.soundEnabled,
+      reducedMotion: typeof settings.reducedMotion === 'boolean' ? settings.reducedMotion : fallback.reducedMotion,
       timerMultiplier,
       lastSavedAt: normalizeNumber(settings.lastSavedAt, fallback.lastSavedAt, 0)
     };

@@ -13,7 +13,7 @@ Game.Render.Quiz = (function () {
       : active.context.isBoss ? 'ศึกหัวหน้าปราสาท' : active.context.npcName || 'คำถาม';
     const typingMultiplier = Game.Config.economy.typingCoinMultiplier;
     const hintCost = Game.Config.economy.hintCost;
-    const body = state.settings.typingMode ? renderTyping(result, view.draftAnswer || '') : renderChoices(active, result);
+    const body = state.settings.typingMode ? renderTyping(result, view.draftAnswer || '') : renderChoices(active, result, view);
     const hintText = active.usedHint && q.hint ? q.hint : view.feedback || '';
     return `<div class="overlay">
       <section class="modal quiz-question" role="dialog" aria-modal="true">
@@ -33,10 +33,17 @@ Game.Render.Quiz = (function () {
     </div>`;
   }
 
-  function renderChoices(active, result) {
+  function renderChoices(active, result, view) {
+    const selectedChoice = view.selectedChoice;
+    const answered = !!result;
     return `<div class="choices">${active.question.choices.map(function map(choice) {
       const disabled = result || active.disabledChoices.some(function some(c) { return String(c) === String(choice); });
-      return `<button class="choice" data-quiz-choice="${Game.Infra.Util.escapeHtml(choice)}" ${disabled ? 'disabled' : ''}>${Game.Infra.Util.escapeHtml(choice)}</button>`;
+      const isSelected = selectedChoice !== null && selectedChoice !== undefined && String(selectedChoice) === String(choice);
+      const isCorrect = answered && String(choice) === String(result.answer);
+      const selectedWrong = answered && isSelected && !result.correct;
+      const stateClass = isCorrect ? 'is-correct' : (selectedWrong ? 'is-incorrect' : (isSelected ? 'is-selected' : ''));
+      const icon = isCorrect ? '<span class="choice-icon" aria-hidden="true">✓</span>' : (selectedWrong ? '<span class="choice-icon" aria-hidden="true">✕</span>' : '');
+      return `<button class="choice ${stateClass}" data-quiz-choice="${Game.Infra.Util.escapeHtml(choice)}" ${disabled ? 'disabled' : ''}>${icon}<span>${Game.Infra.Util.escapeHtml(choice)}</span></button>`;
     }).join('')}</div>`;
   }
 

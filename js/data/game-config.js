@@ -55,7 +55,8 @@ Game.Config = (function () {
     },
     settings: {
       typingMode: false,
-      soundEnabled: true
+      soundEnabled: true,
+      reducedMotion: false
     }
   };
 

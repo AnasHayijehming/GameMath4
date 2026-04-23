@@ -289,6 +289,44 @@ input, select {
   min-height: 58px;
   font-size: 1.1rem;
   overflow-wrap: anywhere;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 120ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.choice-icon {
+  font-weight: 900;
+}
+
+.choice.is-selected {
+  background: #d7ecff;
+  border-color: var(--focus);
+}
+
+.choice.is-correct {
+  background: #c9f3d0;
+  border-color: var(--success);
+  animation: choice-pop 260ms ease;
+}
+
+.choice.is-incorrect {
+  background: #ffd9d9;
+  border-color: var(--danger);
+  animation: choice-shake 280ms ease;
+}
+
+@keyframes choice-pop {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@keyframes choice-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
 .result {
@@ -351,8 +389,98 @@ input, select {
 
 .toast {
   min-height: 24px;
-  color: var(--danger);
+  color: var(--ink);
   font-weight: 700;
+}
+
+.toast--success { color: var(--success); }
+.toast--error { color: var(--danger); }
+.toast--info { color: var(--focus); }
+
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  overflow: hidden;
+}
+
+.fx-particle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  animation: fx-burst 620ms ease-out forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+.fx-particle--coin {
+  background: var(--coin);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes fx-burst {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -70px))) scale(0.9); opacity: 0; }
+}
+
+.fx-screen-glow {
+  position: absolute;
+  inset: -20%;
+  opacity: 0;
+  animation: fx-screen-pulse 560ms ease-out forwards;
+}
+
+.fx-screen-glow--correct { background: radial-gradient(circle at 50% 35%, rgba(71, 214, 106, 0.35), transparent 62%); }
+.fx-screen-glow--level { background: radial-gradient(circle at 50% 35%, rgba(255, 202, 58, 0.4), transparent 64%); }
+.fx-screen-glow--portal { background: radial-gradient(circle at 50% 50%, rgba(138, 74, 255, 0.32), transparent 66%); }
+
+@keyframes fx-screen-pulse {
+  0% { opacity: 0; transform: scale(0.96); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+
+.fx-toast-stack {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.fx-toast {
+  background: #ffffff;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  padding: 8px 14px;
+  font-weight: 700;
+  animation: toast-in-out 1700ms ease forwards;
+}
+
+.fx-toast.is-static { animation: none; }
+.fx-toast--success { color: var(--success); }
+.fx-toast--error { color: var(--danger); }
+.fx-toast--info { color: var(--focus); }
+
+@keyframes toast-in-out {
+  0% { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  12%, 82% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-8px) scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .mini-map-note {
