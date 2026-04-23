@@ -32,6 +32,14 @@ Game.Main = (function () {
     ].forEach(Game.SceneManager.register);
 
     Game.Systems.Encounter.init();
+    Game.Render.AssetLoader.loadManifest().then(function onManifest() {
+      const active = Game.State.get();
+      const zoneId = active && active.world ? active.world.currentZone : 'forest';
+      Game.Render.AssetLoader.preloadCritical(zoneId);
+    });
+    Game.EventBus.on('player:zone_changed', function onZoneChanged(payload) {
+      Game.Render.AssetLoader.preloadCritical(payload && payload.toZone);
+    });
     Game.Input.init();
     setupAutoSave();
     Game.State.subscribe(Game.SceneManager.requestRender);

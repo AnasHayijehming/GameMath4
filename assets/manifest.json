@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "model": "gpt-image-2",
+  "style": {
+    "palette": "bright educational fantasy",
+    "lighting": "soft daylight",
+    "camera": "2D top-down for maps, portrait for NPCs, iconographic for items"
+  },
+  "assets": {
+    "title_bg": "assets/ui/title-bg.png",
+    "ui_panel_texture": "assets/ui/panel-texture.png",
+    "ui_button_texture": "assets/ui/button-texture.png",
+
+    "zone_forest_bg": "assets/zones/forest/background.png",
+    "zone_city_bg": "assets/zones/city/background.png",
+    "zone_castle_bg": "assets/zones/castle/background.png",
+
+    "zone_forest_tile_grass": "assets/zones/forest/tile-grass.png",
+    "zone_forest_tile_floor": "assets/zones/forest/tile-floor.png",
+    "zone_forest_tile_obstacle": "assets/zones/forest/tile-obstacle.png",
+    "zone_forest_tile_portal": "assets/zones/forest/tile-portal.png",
+
+    "zone_city_tile_grass": "assets/zones/city/tile-grass.png",
+    "zone_city_tile_floor": "assets/zones/city/tile-floor.png",
+    "zone_city_tile_obstacle": "assets/zones/city/tile-obstacle.png",
+    "zone_city_tile_portal": "assets/zones/city/tile-portal.png",
+
+    "zone_castle_tile_grass": "assets/zones/castle/tile-grass.png",
+    "zone_castle_tile_floor": "assets/zones/castle/tile-floor.png",
+    "zone_castle_tile_obstacle": "assets/zones/castle/tile-obstacle.png",
+    "zone_castle_tile_portal": "assets/zones/castle/tile-portal.png",
+
+    "npc_forest_teacher": "assets/npcs/forest-teacher.png",
+    "npc_forest_rabbit": "assets/npcs/forest-rabbit.png",
+    "npc_city_merchant": "assets/npcs/city-merchant.png",
+    "npc_city_engineer": "assets/npcs/city-engineer.png",
+    "npc_castle_geomancer": "assets/npcs/castle-geomancer.png",
+    "npc_castle_boss": "assets/npcs/castle-boss.png",
+
+    "item_icon_hint_scroll": "assets/items/hint-scroll.png",
+    "item_icon_time_boost": "assets/items/time-boost.png",
+    "item_icon_coin_magnet": "assets/items/coin-magnet.png",
+    "item_icon_armor": "assets/items/armor.png"
+  }
+}

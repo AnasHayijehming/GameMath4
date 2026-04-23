@@ -24,7 +24,8 @@ Game.Scenes.Overworld = (function () {
     render() {
       const state = Game.State.get();
       const zone = Game.Data.Zones.get(state.world.currentZone);
-      return `<div class="game-shell screen--${zone.theme}">
+      const bgUrl = Game.Render.AssetLoader.zoneBackground(zone.id);
+      return `<div class="game-shell screen--${zone.theme}" style="background-image:linear-gradient(rgba(24,33,43,.18), rgba(24,33,43,.18)), url('${bgUrl}'); background-size:cover; background-position:center;">
         ${Game.Render.HUD.render(state, message)}
         <section class="world-wrap">${Game.Render.Map.render(state)}</section>
         ${Game.Scenes.Base.controls()}
