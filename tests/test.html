@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Math Adventure Tests</title>
+  <style>
+    body { font-family: Tahoma, Arial, sans-serif; margin: 24px; color: #18212b; }
+    .pass { color: #2f9e44; }
+    .fail { color: #d74444; }
+    li { margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <h1>Math Adventure Tests</h1>
+  <ol id="results"></ol>
+
+  <script>
+    window.__MATH_ADVENTURE_SKIP_BOOT__ = true;
+  </script>
+  <script src="../js/types.js"></script>
+  <script src="../js/infra/util.js"></script>
+  <script src="../js/infra/event-bus.js"></script>
+  <script src="../js/infra/state.js"></script>
+  <script src="../js/infra/storage.js"></script>
+  <script src="../js/infra/rng.js"></script>
+  <script src="../js/data/game-config.js"></script>
+  <script src="../js/data/zones.js"></script>
+  <script src="../js/data/items.js"></script>
+  <script src="../js/data/quiz-bank.js"></script>
+  <script src="../js/data/quiz-generators.js"></script>
+  <script src="../js/systems/economy.js"></script>
+  <script src="../js/systems/progression.js"></script>
+  <script src="../js/systems/quiz.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="test-config-and-economy.js"></script>
+</body>
+</html>
