@@ -9,6 +9,7 @@ Game.Scenes.Quiz = (function () {
   let timerId = null;
   let draftAnswer = '';
   let feedback = '';
+  let selectedChoice = null;
 
   const scene = {
     id: 'quiz',
@@ -16,6 +17,7 @@ Game.Scenes.Quiz = (function () {
       result = null;
       draftAnswer = '';
       feedback = '';
+      selectedChoice = null;
       const active = Game.Systems.Quiz.start(params || {});
       const zone = Game.Data.Zones.get(active.context.zoneId);
       const multiplier = Game.State.get().settings.timerMultiplier || 1;
@@ -35,16 +37,18 @@ Game.Scenes.Quiz = (function () {
       timerId = null;
       draftAnswer = '';
       feedback = '';
+      selectedChoice = null;
       Game.Systems.Quiz.clear();
     },
     render() {
-      return Game.Render.Quiz.render(Game.Systems.Quiz.current(), secondsLeft, result, { draftAnswer, feedback });
+      return Game.Render.Quiz.render(Game.Systems.Quiz.current(), secondsLeft, result, { draftAnswer, feedback, selectedChoice });
     },
     bind(root) {
       root.querySelectorAll('[data-quiz-choice]').forEach(function each(button) {
         button.addEventListener('click', function onChoice() {
           if (result) return;
-          finish(Game.Systems.Quiz.submit(button.getAttribute('data-quiz-choice')));
+          selectedChoice = button.getAttribute('data-quiz-choice');
+          finish(Game.Systems.Quiz.submit(selectedChoice));
         });
       });
       const hint = root.querySelector('[data-quiz-hint]');

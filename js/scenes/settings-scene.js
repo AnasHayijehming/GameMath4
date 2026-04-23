@@ -23,6 +23,7 @@ Game.Scenes.Settings = (function () {
           <form class="form-grid" data-settings-form>
             <label><input type="checkbox" name="typingMode" ${state.settings.typingMode ? 'checked' : ''}> โหมดพิมพ์ตอบ (เหรียญ x${typingMultiplier})</label>
             <label><input type="checkbox" name="soundEnabled" ${state.settings.soundEnabled ? 'checked' : ''}> เปิดเสียง</label>
+            <label><input type="checkbox" name="reducedMotion" ${state.settings.reducedMotion ? 'checked' : ''}> ลดการเคลื่อนไหว</label>
             <label>เวลาเพิ่มเติม
               <select name="timerMultiplier">${timerOptions}</select>
             </label>
@@ -45,6 +46,7 @@ Game.Scenes.Settings = (function () {
             settings: Object.assign({}, s.settings, {
               typingMode: form.elements.typingMode.checked,
               soundEnabled: form.elements.soundEnabled.checked,
+              reducedMotion: form.elements.reducedMotion.checked,
               timerMultiplier: Game.Main.normalizeTimerMultiplier(form.elements.timerMultiplier.value, s.settings.timerMultiplier)
             })
           });
