@@ -35,8 +35,8 @@ Game.Data.Zones = (function () {
       ],
       quiz: {
         difficulty: 'easy',
-        encounterProbability: 0.15,
-        topicWeights: { addition: 3, subtraction: 3, multiplication: 2, division: 2 }
+        topicWeights: { addition: 1, subtraction: 1 },
+        generatorConstraints: {}
       }
     },
     city: {
@@ -69,8 +69,8 @@ Game.Data.Zones = (function () {
       ],
       quiz: {
         difficulty: 'medium',
-        encounterProbability: 0.12,
-        topicWeights: { fraction_add: 2, fraction_subtract: 2, decimal_add: 2, decimal_multiply: 2, word_problem: 3 }
+        topicWeights: { multiplication: 1, division: 1 },
+        generatorConstraints: { maxSecondOperand: 9 }
       }
     },
     castle: {
@@ -101,8 +101,8 @@ Game.Data.Zones = (function () {
       ],
       quiz: {
         difficulty: 'hard',
-        encounterProbability: 0.13,
-        topicWeights: { geometry: 4, word_problem: 3, addition: 1, subtraction: 1, multiplication: 1, division: 1, decimal_multiply: 1 }
+        topicWeights: { addition: 1, subtraction: 1, multiplication: 1, division: 1, fraction_add: 1, fraction_subtract: 1, decimal_add: 1, decimal_multiply: 1 },
+        generatorConstraints: { maxSecondOperand: 9 }
       }
     }
   };

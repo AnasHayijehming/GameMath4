@@ -7,12 +7,20 @@ Game.Data.QuestionGenerators = (function () {
   const RNG = Game.Infra.RNG;
   const Util = Game.Infra.Util;
 
-  function rangeFor(difficulty) {
-    return {
-      easy: [1, 20],
-      medium: [10, 99],
-      hard: [50, 999]
-    }[difficulty] || [1, 20];
+  function currentMode() {
+    const state = Game.State && Game.State.get && Game.State.get();
+    return (state && state.settings && state.settings.questionLevelMode)
+      || Game.Config.quiz.defaultQuestionLevelMode;
+  }
+
+  function modeConfig() {
+    const modes = Game.Config.quiz.questionLevelModes;
+    return modes[currentMode()] || modes[Game.Config.quiz.defaultQuestionLevelMode];
+  }
+
+  function rangeFor() {
+    const mode = modeConfig();
+    return [mode.min, mode.max];
   }
 
   function numericChoices(answer) {
@@ -65,19 +73,27 @@ Game.Data.QuestionGenerators = (function () {
       const answer = a - b;
       return { topic: 'subtraction', question: `${a} - ${b} = ?`, answer, choices: numericChoices(answer), hint: 'เอาจำนวนที่น้อยกว่าออกจากจำนวนที่มากกว่า' };
     },
-    multiplication(difficulty) {
-      const max = difficulty === 'hard' ? 24 : difficulty === 'medium' ? 12 : 9;
-      const a = RNG.int(2, max);
-      const b = RNG.int(2, max);
+    multiplication(difficulty, constraints) {
+      const c = constraints || {};
+      const r = rangeFor(difficulty);
+      const a = RNG.int(r[0], r[1]);
+      const bMax = c.maxSecondOperand ? Math.min(c.maxSecondOperand, r[1]) : r[1];
+      const bMin = Math.min(r[0], bMax);
+      const b = RNG.int(bMin, bMax);
       const answer = a * b;
       return { topic: 'multiplication', question: `${a} × ${b} = ?`, answer, choices: numericChoices(answer), hint: 'คิดเป็นการบวกจำนวนเดิมซ้ำหลายครั้ง' };
     },
-    division(difficulty) {
-      const max = difficulty === 'hard' ? 20 : difficulty === 'medium' ? 12 : 9;
-      const answer = RNG.int(2, max);
-      const b = RNG.int(2, max);
-      const a = answer * b;
-      return { topic: 'division', question: `${a} ÷ ${b} = ?`, answer, choices: numericChoices(answer), hint: 'ลองคิดว่าเลขใดคูณกับตัวหารแล้วได้ตัวตั้ง' };
+    division(difficulty, constraints) {
+      const c = constraints || {};
+      const r = rangeFor(difficulty);
+      const capMax = c.maxSecondOperand ? Math.min(c.maxSecondOperand, Math.floor(r[1] / 2)) : Math.floor(r[1] / 2);
+      const divisorMax = Math.max(2, Math.min(99, capMax));
+      const b = RNG.int(2, divisorMax);
+      const quotientMin = Math.max(1, Math.ceil(r[0] / b));
+      const quotientMax = Math.max(quotientMin, Math.floor(r[1] / b));
+      const answer = RNG.int(quotientMin, quotientMax);
+      const dividend = answer * b;
+      return { topic: 'division', question: `${dividend} ÷ ${b} = ?`, answer, choices: numericChoices(answer), hint: 'ลองคิดว่าเลขใดคูณกับตัวหารแล้วได้ตัวตั้ง' };
     },
     fraction_add(difficulty) {
       const den = difficulty === 'hard' ? RNG.int(5, 12) : RNG.int(2, 8);
@@ -108,9 +124,9 @@ Game.Data.QuestionGenerators = (function () {
     }
   };
 
-  function generate(topic, difficulty) {
+  function generate(topic, difficulty, constraints) {
     const fn = generators[topic] || generators.addition;
-    return Object.assign({ source: 'generated', difficulty }, fn(difficulty));
+    return Object.assign({ source: 'generated', difficulty }, fn(difficulty, constraints || {}));
   }
 
   return Object.freeze({ generate, topics: Object.keys(generators) });

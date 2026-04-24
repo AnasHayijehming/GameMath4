@@ -56,15 +56,17 @@ Game.Systems.Quiz = (function () {
     const multiplier = zone.multiplier;
     const modeMultiplier = state.settings.typingMode ? economy.typingCoinMultiplier : 1;
     const bonus = active.context.bonusMultiplier || 1;
+    const levelBonus = questionLevelRewardBonus(state.settings.questionLevelMode);
+    const npcBonus = active.context.source === 'npc' ? 1 : 0;
     const reward = correct ? {
-      coins: economy.baseCoinReward * multiplier * modeMultiplier * bonus,
-      exp: economy.baseExpReward * multiplier * bonus
+      coins: economy.baseCoinReward * multiplier * modeMultiplier * bonus + levelBonus + npcBonus,
+      exp: economy.baseExpReward * multiplier * bonus + levelBonus + npcBonus
     } : { coins: 0, exp: 0 };
     updateStats(q.topic, correct);
     if (correct) {
       Game.Systems.Economy.grant(reward.coins);
       Game.Systems.Progression.grantExp(reward.exp);
-      completeEncounter();
+      completeNpcProgress();
     }
     completeQuestionBox(answer);
     Game.EventBus.emit('quiz:answered', { correct, timeTaken: Date.now() - active.startedAt, usedHint: active.usedHint, topic: q.topic });
@@ -100,7 +102,8 @@ Game.Systems.Quiz = (function () {
       if (generatedTopics.includes(topic)) weights[topic] = zone.quiz.topicWeights[topic];
     });
     const topic = Object.keys(weights).length ? weightedTopic(weights) : 'addition';
-    return Game.Data.QuestionGenerators.generate(topic, zone.quiz.difficulty);
+    const constraints = (zone.quiz.generatorConstraints) || {};
+    return Game.Data.QuestionGenerators.generate(topic, zone.quiz.difficulty, constraints);
   }
 
   function weightedTopic(weights) {
@@ -126,7 +129,7 @@ Game.Systems.Quiz = (function () {
     });
   }
 
-  function completeEncounter() {
+  function completeNpcProgress() {
     if (!active.context.npcId) return;
     const npc = active.context.npcId;
     Game.State.update(function update(s) {
@@ -154,6 +157,12 @@ Game.Systems.Quiz = (function () {
 
   function durationFor(difficulty) {
     return Game.Config.quiz.durationsByDifficulty[difficulty] || Game.Config.quiz.durationsByDifficulty.easy;
+  }
+
+  function questionLevelRewardBonus(mode) {
+    const modes = Game.Config.quiz.questionLevelModes;
+    const fallback = modes[Game.Config.quiz.defaultQuestionLevelMode];
+    return Number((modes[mode] || fallback).rewardBonus || 0);
   }
 
   return Object.freeze({ start, current, useHint, submit, timeout, clear, durationFor });
