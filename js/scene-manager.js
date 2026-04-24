@@ -7,6 +7,7 @@ Game.SceneManager = (function () {
   let current = null;
   let params = null;
   let renderQueued = false;
+  let renderedSceneId = null;
 
   function init() {
     Game.EventBus.on('scene:change', function onScene(payload) {
@@ -41,14 +42,31 @@ Game.SceneManager = (function () {
       renderQueued = false;
       const root = document.getElementById('app');
       if (!root || !current) return;
+      const sceneId = current.id;
+      const modalScrollTop = renderedSceneId === sceneId ? readModalScrollTop(root) : null;
       try {
         root.innerHTML = current.render();
+        renderedSceneId = sceneId;
         if (current.bind) current.bind(root);
+        restoreModalScrollTop(root, modalScrollTop);
       } catch (error) {
         console.error('[SceneManager] render failed', error);
+        renderedSceneId = null;
         root.innerHTML = `<div class="screen"><section class="panel"><h2>เกิดข้อผิดพลาด</h2><p>${Game.Infra.Util.escapeHtml(error.message || error)}</p></section></div>`;
       }
     });
+  }
+
+  function readModalScrollTop(root) {
+    const modal = root.querySelector('.modal');
+    return modal ? modal.scrollTop : null;
+  }
+
+  function restoreModalScrollTop(root, scrollTop) {
+    if (scrollTop === null || scrollTop === undefined) return;
+    const modal = root.querySelector('.modal');
+    if (!modal) return;
+    modal.scrollTop = Math.min(scrollTop, Math.max(0, modal.scrollHeight - modal.clientHeight));
   }
 
   function currentId() {

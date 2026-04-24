@@ -46,34 +46,26 @@ Game.Render.FX = (function () {
       toast(`เลเวลอัป! Lv ${payload.newLevel}`, 'success');
       levelUpPulse();
     });
+
+    Game.EventBus.on('player:blocked', function onBlocked(payload) {
+      toast(payload && payload.reason === 'npc' ? 'กด A เพื่อคุย' : 'เดินทางนี้ไม่ได้', 'info');
+    });
   }
 
   function coinBurst(origin) {
-    if (!isMotionEnabled()) return;
-    const point = origin || { x: window.innerWidth * 0.5, y: 96 };
-    for (let i = 0; i < 10; i += 1) {
-      const node = document.createElement('span');
-      node.className = 'fx-particle fx-particle--coin';
-      node.style.left = `${point.x}px`;
-      node.style.top = `${point.y}px`;
-      node.style.setProperty('--dx', `${rand(-85, 85)}px`);
-      node.style.setProperty('--dy', `${rand(-90, -18)}px`);
-      node.style.setProperty('--delay', `${i * 16}ms`);
-      layer.appendChild(node);
-      cleanup(node, 620);
-    }
+    return origin;
   }
 
   function correctAnswerGlow() {
-    addPulse('fx-screen-glow fx-screen-glow--correct', 520);
+    return;
   }
 
   function levelUpPulse() {
-    addPulse('fx-screen-glow fx-screen-glow--level', 620);
+    return;
   }
 
   function portalTransition() {
-    addPulse('fx-screen-glow fx-screen-glow--portal', 560);
+    return;
   }
 
   function toast(text, variant) {
@@ -83,17 +75,11 @@ Game.Render.FX = (function () {
     node.setAttribute('role', 'status');
     node.textContent = String(text || '');
     toastLayer.appendChild(node);
-    if (!isMotionEnabled()) node.classList.add('is-static');
     cleanup(node, TOAST_MS);
   }
 
   function addPulse(className, lifetime) {
-    if (!isMotionEnabled()) return;
-    ensureLayers();
-    const node = document.createElement('div');
-    node.className = className;
-    layer.appendChild(node);
-    cleanup(node, lifetime || 520);
+    return { className, lifetime };
   }
 
   function ensureLayers() {
@@ -126,10 +112,6 @@ Game.Render.FX = (function () {
     window.setTimeout(function removeNode() {
       if (node && node.parentNode) node.parentNode.removeChild(node);
     }, delayMs);
-  }
-
-  function rand(min, max) {
-    return Math.round(Math.random() * (max - min) + min);
   }
 
   return Object.freeze({ init, coinBurst, correctAnswerGlow, levelUpPulse, portalTransition, toast, isMotionEnabled });

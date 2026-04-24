@@ -4,70 +4,43 @@ Game.Render = Game.Render || {};
 Game.Render.HUD = (function () {
   'use strict';
 
-  let animated = { coins: 0, exp: 0, level: 1 };
-  let lastTs = 0;
-  let tickQueued = false;
+  let currentValues = { coins: 0, exp: 0, level: 1 };
 
   function init() {
     const state = Game.State.get();
     if (!state) return;
-    animated = { coins: state.player.coins, exp: state.player.exp, level: state.player.level };
+    currentValues = { coins: state.player.coins, exp: state.player.exp, level: state.player.level };
   }
 
   function render(state, message) {
     const need = Game.Systems.Progression.expNeeded(state.player.level);
     const zone = Game.Data.Zones.get(state.world.currentZone);
-    const values = animateCounters(state);
+    const values = readCounters(state);
+    const expPercent = Math.max(0, Math.min(100, Math.round((values.exp / need) * 100)));
     return `<header class="hud">
-      <div>
+      <div class="hud-main">
         <div class="hud-stats">
-          <span>${Game.Infra.Util.escapeHtml(state.player.name)}</span>
-          <span>Lv ${values.level}</span>
-          <span>EXP ${values.exp}/${need}</span>
-          <span>เหรียญ ${values.coins}</span>
-          <span>${zone.name}</span>
+          <span class="hud-name">${Game.Infra.Util.escapeHtml(state.player.name)}</span>
+          <span class="hud-pill">Lv ${values.level}</span>
+          <span class="hud-pill hud-pill--coin">เหรียญ ${values.coins}</span>
+          <span class="hud-pill hud-pill--zone">${zone.name}</span>
         </div>
-        <div class="hud-message">${Game.Infra.Util.escapeHtml(message || 'เดินสำรวจ ตอบคำถาม และกด A เพื่อคุยหรือเข้า portal')}</div>
+        <div class="hud-exp-row" aria-label="EXP ${values.exp} จาก ${need}">
+          <span class="hud-exp-label">EXP</span>
+          <div class="hud-exp">
+            <span style="width:${expPercent}%"></span>
+          </div>
+        </div>
+        <div class="hud-message">${Game.Infra.Util.escapeHtml(message || 'ภารกิจ: สำรวจแผนที่ ตอบคำถาม และเก็บเหรียญเพื่อแต่งตัวละคร')}</div>
       </div>
-      <div>${state.settings.soundEnabled ? 'เสียง: เปิด' : 'เสียง: ปิด'}</div>
+      <div class="hud-sound">${state.settings.soundEnabled ? 'เสียง: เปิด' : 'เสียง: ปิด'}</div>
     </header>`;
   }
 
-  function animateCounters(state) {
-    if (!state) return animated;
-    if (!lastTs) lastTs = Date.now();
-    const now = Date.now();
-    const dt = Math.min(0.05, (now - lastTs) / 1000);
-    lastTs = now;
-    const motionOn = Game.Render.FX && Game.Render.FX.isMotionEnabled && Game.Render.FX.isMotionEnabled();
-    if (!motionOn || state.ui.currentScene !== 'overworld') {
-      animated = { coins: state.player.coins, exp: state.player.exp, level: state.player.level };
-      tickQueued = false;
-      return animated;
-    }
-
-    const speed = 18;
-    animated = {
-      coins: stepTo(animated.coins, state.player.coins, dt * speed),
-      exp: stepTo(animated.exp, state.player.exp, dt * speed),
-      level: state.player.level
-    };
-
-    if ((animated.coins !== state.player.coins || animated.exp !== state.player.exp) && !tickQueued) {
-      tickQueued = true;
-      window.requestAnimationFrame(function raf() {
-        tickQueued = false;
-        Game.SceneManager.requestRender();
-      });
-    }
-    return animated;
-  }
-
-  function stepTo(current, target, step) {
-    if (current === target) return target;
-    const delta = target - current;
-    if (Math.abs(delta) <= step) return target;
-    return Math.round(current + Math.sign(delta) * Math.max(1, step));
+  function readCounters(state) {
+    if (!state) return currentValues;
+    currentValues = { coins: state.player.coins, exp: state.player.exp, level: state.player.level };
+    return currentValues;
   }
 
   return Object.freeze({ init, render });

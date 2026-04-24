@@ -25,8 +25,8 @@ Game.Render.Stats = (function () {
     }, { correct: 0, total: 0 });
     const ownedCount = state.inventory.owned.length;
     const itemCount = Game.Data.Items.all().length;
-    return `<div class="screen">
-      <section class="modal">
+    return `<div class="screen screen--scroll">
+      <section class="modal modal--scroll">
         <h2>สถิติของ ${Game.Infra.Util.escapeHtml(state.player.name)}</h2>
         <p>เวลาเล่นรวม: ${Game.Infra.Util.formatTime(state.stats.totalPlayTimeMs)}</p>
         <p>ตอบถูกทั้งหมด: ${totals.correct}/${totals.total} ข้อ (${percent(totals.correct, totals.total)}%)</p>

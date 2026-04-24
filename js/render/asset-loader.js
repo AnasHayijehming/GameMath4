@@ -15,6 +15,7 @@ Game.Render.AssetLoader = (function () {
 
   let assets = Object.assign({}, fallbackAssets);
   let loaded = false;
+  const statusByKey = {};
 
   function loadManifest() {
     if (loaded) return Promise.resolve(assets);
@@ -36,7 +37,11 @@ Game.Render.AssetLoader = (function () {
   }
 
   function getUrl(key) {
-    if (assets[key]) return assets[key];
+    const url = assets[key];
+    if (!url) return placeholderDataUrl(key);
+    if (isInlineUrl(url)) return url;
+    const status = validateAsset(key, url);
+    if (status === 'loaded') return url;
     return placeholderDataUrl(key);
   }
 
@@ -50,7 +55,44 @@ Game.Render.AssetLoader = (function () {
 
   function placeholderDataUrl(label) {
     const safe = (label || 'missing').replace(/[^a-z0-9_\-]/gi, '_');
-    return `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 320"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#1d3557"/><stop offset="1" stop-color="#457b9d"/></linearGradient></defs><rect width="512" height="320" fill="url(#g)"/><circle cx="64" cy="44" r="26" fill="#f1faee" opacity=".35"/><circle cx="462" cy="276" r="46" fill="#a8dadc" opacity=".25"/><text x="24" y="294" fill="#ffffff" font-size="20" font-family="Arial, sans-serif">missing asset: ${safe}</text></svg>`)} `;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 320"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#1d3557"/><stop offset="1" stop-color="#457b9d"/></linearGradient></defs><rect width="512" height="320" fill="url(#g)"/><circle cx="64" cy="44" r="26" fill="#f1faee" opacity=".35"/><circle cx="462" cy="276" r="46" fill="#a8dadc" opacity=".25"/><text x="24" y="294" fill="#ffffff" font-size="20" font-family="Arial, sans-serif">missing asset: ${safe}</text></svg>`)}`;
+  }
+
+  function isInlineUrl(url) {
+    return /^data:/i.test(String(url || ''));
+  }
+
+  function validateAsset(key, url) {
+    const current = statusByKey[key];
+    if (current && current.url === url) return current.status;
+
+    statusByKey[key] = { url, status: 'pending' };
+    if (typeof Image === 'undefined') {
+      statusByKey[key].status = 'failed';
+      return statusByKey[key].status;
+    }
+
+    const image = new Image();
+    image.onload = function onLoad() {
+      const latest = statusByKey[key];
+      if (!latest || latest.url !== url) return;
+      latest.status = 'loaded';
+      requestRender();
+    };
+    image.onerror = function onError() {
+      const latest = statusByKey[key];
+      if (!latest || latest.url !== url) return;
+      latest.status = 'failed';
+      requestRender();
+    };
+    image.src = url;
+    return statusByKey[key].status;
+  }
+
+  function requestRender() {
+    if (Game.SceneManager && Game.SceneManager.requestRender) {
+      Game.SceneManager.requestRender();
+    }
   }
 
   function preloadCritical(zoneId) {

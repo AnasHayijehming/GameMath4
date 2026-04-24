@@ -10,7 +10,7 @@ Game.Systems.Quiz = (function () {
     const state = Game.State.get();
     const zoneId = context.zoneId || state.world.currentZone;
     const zone = Game.Data.Zones.get(zoneId);
-    const question = chooseQuestion(zone);
+    const question = chooseQuestion(zone, context || {});
     active = {
       context: Object.assign({ zoneId }, context),
       question,
@@ -66,6 +66,7 @@ Game.Systems.Quiz = (function () {
       Game.Systems.Progression.grantExp(reward.exp);
       completeEncounter();
     }
+    completeQuestionBox(answer);
     Game.EventBus.emit('quiz:answered', { correct, timeTaken: Date.now() - active.startedAt, usedHint: active.usedHint, topic: q.topic });
     Game.EventBus.emit('quiz:completed', { correct, reward, question: q, context: active.context });
     return { correct, reward, answer: q.answer };
@@ -79,10 +80,26 @@ Game.Systems.Quiz = (function () {
     active = null;
   }
 
-  function chooseQuestion(zone) {
+  function chooseQuestion(zone, context) {
+    if (context.source === 'npc') {
+      return Game.Data.QuizBank.pick('word_problem', zone.quiz.difficulty, zone.id);
+    }
+    if (context.source === 'questionBox') {
+      return chooseGeneratedQuestion(zone);
+    }
     const topic = weightedTopic(zone.quiz.topicWeights);
     if (topic === 'word_problem') return Game.Data.QuizBank.pick('word_problem', zone.quiz.difficulty, zone.id);
     if (topic === 'geometry') return Game.Data.QuizBank.pick('geometry', zone.quiz.difficulty, zone.id);
+    return Game.Data.QuestionGenerators.generate(topic, zone.quiz.difficulty);
+  }
+
+  function chooseGeneratedQuestion(zone) {
+    const generatedTopics = Game.Data.QuestionGenerators.topics;
+    const weights = {};
+    Object.keys(zone.quiz.topicWeights).forEach(function each(topic) {
+      if (generatedTopics.includes(topic)) weights[topic] = zone.quiz.topicWeights[topic];
+    });
+    const topic = Object.keys(weights).length ? weightedTopic(weights) : 'addition';
     return Game.Data.QuestionGenerators.generate(topic, zone.quiz.difficulty);
   }
 
@@ -117,6 +134,13 @@ Game.Systems.Quiz = (function () {
       const bosses = active.context.isBoss && !s.bossDefeated.includes(npc) ? s.bossDefeated.concat(npc) : s.bossDefeated;
       return Object.assign({}, s, { npcsCompleted: completed, bossDefeated: bosses });
     });
+  }
+
+  function completeQuestionBox(answer) {
+    if (!active.context || active.context.source !== 'questionBox') return;
+    if (answer === '__timeout__') return;
+    if (!Game.Systems.QuestionBoxes || !active.context.boxId) return;
+    Game.Systems.QuestionBoxes.consume(active.context.zoneId, active.context.boxId);
   }
 
   function sameAnswer(a, b) {

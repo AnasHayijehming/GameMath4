@@ -19,10 +19,17 @@ Game.Systems.Movement = (function () {
     const next = { x: state.world.position.x + d.x, y: state.world.position.y + d.y };
     if (!Game.Data.Zones.isWalkable(zoneId, next.x, next.y)) {
       face(direction);
+      Game.EventBus.emit('player:blocked', { reason: 'wall', position: next });
       return false;
     }
     if (Game.Data.Zones.npcAt(zoneId, next.x, next.y)) {
       face(direction);
+      Game.EventBus.emit('player:blocked', { reason: 'npc', position: next });
+      return false;
+    }
+    if (Game.Systems.QuestionBoxes && Game.Systems.QuestionBoxes.boxAt(zoneId, next.x, next.y)) {
+      face(direction);
+      Game.EventBus.emit('player:blocked', { reason: 'questionBox', position: next });
       return false;
     }
     Game.State.update(function update(s) {

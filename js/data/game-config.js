@@ -22,7 +22,12 @@ Game.Config = (function () {
     },
     world: {
       startingZone: 'forest',
-      defaultFacing: 'down'
+      defaultFacing: 'down',
+      zoneUnlockLevels: {
+        forest: 1,
+        city: 3,
+        castle: 5
+      }
     },
     inventory: {
       starterOwned: ['clothes_basic'],

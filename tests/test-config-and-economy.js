@@ -35,6 +35,47 @@
     return Object.assign({}, state, overrides || {});
   }
 
+  function expToReachLevel(targetLevel) {
+    let total = 0;
+    for (let level = Game.Config.player.startingLevel; level < targetLevel; level += 1) {
+      total += Game.Systems.Progression.expNeeded(level);
+    }
+    return total;
+  }
+
+  function positionKey(pos) {
+    return pos.x + ',' + pos.y;
+  }
+
+  function assertQuestionBoxPositions(zoneId, boxes) {
+    const zone = Game.Data.Zones.get(zoneId);
+    const seen = new Set();
+    boxes.forEach(function each(box) {
+      assert(Game.Data.Zones.isWalkable(zoneId, box.x, box.y), 'box should be on walkable tile');
+      assert(!Game.Data.Zones.npcAt(zoneId, box.x, box.y), 'box should not overlap npc');
+      assert(!Game.Data.Zones.portalAt(zoneId, box.x, box.y), 'box should not overlap portal');
+      assert(!(zone.shop && zone.shop.x === box.x && zone.shop.y === box.y), 'box should not overlap shop');
+      assert(!(zone.spawnPoint.x === box.x && zone.spawnPoint.y === box.y), 'box should not overlap spawn');
+      assert(!seen.has(positionKey(box)), 'box positions should be unique');
+      seen.add(positionKey(box));
+    });
+  }
+
+  function adjacentMoveIntoBox(zoneId, box) {
+    const options = [
+      { pos: { x: box.x, y: box.y - 1 }, direction: 'down' },
+      { pos: { x: box.x, y: box.y + 1 }, direction: 'up' },
+      { pos: { x: box.x - 1, y: box.y }, direction: 'right' },
+      { pos: { x: box.x + 1, y: box.y }, direction: 'left' }
+    ];
+    return options.find(function find(option) {
+      return Game.Data.Zones.isWalkable(zoneId, option.pos.x, option.pos.y)
+        && !Game.Data.Zones.npcAt(zoneId, option.pos.x, option.pos.y)
+        && !Game.Data.Zones.portalAt(zoneId, option.pos.x, option.pos.y)
+        && !Game.Systems.QuestionBoxes.boxAt(zoneId, option.pos.x, option.pos.y);
+    });
+  }
+
   test('player name validation accepts Thai English numbers and collapses spaces', function () {
     const valid = Game.Main.validatePlayerName('  เด็ก   Pro 4  ');
     assert(valid.ok, 'expected valid name');
@@ -98,6 +139,17 @@
     assertEqual(Game.State.get().player.coins, coinsAfterPurchase, 'duplicate should not spend coins');
   });
 
+  test('item catalog exposes display metadata for character and shop UI', function () {
+    const item = Game.Data.Items.get('accessory_shield');
+    assertEqual(item.slotLabel, 'อุปกรณ์', 'slot label');
+    assertEqual(item.rarity.id, 'epic', 'rarity tier');
+    assert(item.description.length > 0, 'description should be present');
+    assertEqual(Game.Data.Items.slots().length, 5, 'slot count');
+    assert(Game.Data.Items.bySlot('hat').every(function every(hat) {
+      return hat.slot === 'hat' && hat.slotLabel === 'หมวก';
+    }), 'slot lookup should include metadata');
+  });
+
   test('quiz hint cost and typing reward use config', function () {
     const state = freshState({
       settings: Object.assign({}, freshState().settings, { typingMode: true })
@@ -117,6 +169,89 @@
     assertEqual(outcome.reward.coins, expectedCoins, 'typing reward');
     assertEqual(Game.State.get().player.coins, Game.Config.player.startingCoins - Game.Config.economy.hintCost + expectedCoins, 'reward granted');
     Game.Systems.Quiz.clear();
+  });
+
+  test('question boxes spawn five visible non-overlapping boxes per zone', function () {
+    Game.Systems.QuestionBoxes.reset();
+    Game.State.init(freshState());
+    ['forest', 'city', 'castle'].forEach(function each(zoneId) {
+      const boxes = Game.Systems.QuestionBoxes.ensure(zoneId);
+      assertEqual(boxes.length, 5, zoneId + ' should have five boxes');
+      assertQuestionBoxPositions(zoneId, boxes);
+    });
+  });
+
+  test('movement blocks walking onto question boxes', function () {
+    const state = freshState();
+    Game.State.init(state);
+    Game.Systems.QuestionBoxes.reset();
+    const zoneId = state.world.currentZone;
+    const box = Game.Systems.QuestionBoxes.ensure(zoneId)[0];
+    const move = adjacentMoveIntoBox(zoneId, box);
+    assert(move, 'expected a walkable adjacent tile near a question box');
+
+    Game.State.init(Object.assign({}, state, {
+      world: Object.assign({}, state.world, { position: move.pos })
+    }));
+
+    const moved = Game.Systems.Movement.tryMove(move.direction);
+    assertEqual(moved, false, 'movement into question box should fail');
+    assertEqual(Game.State.get().world.position.x, move.pos.x, 'x should stay');
+    assertEqual(Game.State.get().world.position.y, move.pos.y, 'y should stay');
+  });
+
+  test('question box quiz uses generated numeric questions and respawns after submitted answer', function () {
+    const state = freshState();
+    Game.State.init(state);
+    Game.Systems.QuestionBoxes.reset();
+    const zoneId = state.world.currentZone;
+    const box = Game.Systems.QuestionBoxes.ensure(zoneId)[0];
+    const active = Game.Systems.Quiz.start({ source: 'questionBox', zoneId, boxId: box.id });
+
+    assertEqual(active.question.source, 'generated', 'box question should come from generator');
+    assert(active.question.topic !== 'word_problem', 'box question should not be word problem');
+
+    Game.Systems.Quiz.submit(active.question.answer);
+    const boxes = Game.Systems.QuestionBoxes.all(zoneId);
+    assertEqual(boxes.length, 5, 'box count should return to five');
+    assert(!boxes.some(function some(candidate) { return candidate.id === box.id; }), 'answered box should be replaced');
+    assertQuestionBoxPositions(zoneId, boxes);
+    Game.Systems.Quiz.clear();
+  });
+
+  test('npc quiz always uses word problems, including forest', function () {
+    Game.State.init(freshState());
+    const active = Game.Systems.Quiz.start({ source: 'npc', zoneId: 'forest', npcId: 'forest_npc_01' });
+    assertEqual(active.question.topic, 'word_problem', 'npc question topic');
+    assertEqual(active.question.difficulty, 'easy', 'forest npc should use easy word problem');
+    assertEqual(active.question.zone, 'forest', 'forest npc should use forest word problem');
+    Game.Systems.Quiz.clear();
+  });
+
+  test('zone unlock requirements read from config and portal targets stay in sync', function () {
+    const zoneUnlockLevels = Game.Config.world.zoneUnlockLevels;
+    assertEqual(Game.Data.Zones.get('forest').requiredLevel, zoneUnlockLevels.forest, 'forest required level');
+    assertEqual(Game.Data.Zones.get('city').requiredLevel, zoneUnlockLevels.city, 'city required level');
+    assertEqual(Game.Data.Zones.get('castle').requiredLevel, zoneUnlockLevels.castle, 'castle required level');
+    assertEqual(Game.Data.Zones.portalAt('forest', 13, 5).requiredLevel, zoneUnlockLevels.city, 'forest portal uses city unlock level');
+    assertEqual(Game.Data.Zones.portalAt('city', 12, 7).requiredLevel, zoneUnlockLevels.castle, 'city portal uses castle unlock level');
+    assertEqual(Game.Data.Zones.portalAt('castle', 1, 7).requiredLevel, zoneUnlockLevels.city, 'castle return portal uses city unlock level');
+  });
+
+  test('progression unlocks zones according to configured zone levels', function () {
+    const zoneUnlockLevels = Game.Config.world.zoneUnlockLevels;
+
+    Game.State.init(freshState());
+    Game.Systems.Progression.grantExp(expToReachLevel(zoneUnlockLevels.city));
+    assertEqual(Game.State.get().player.level, zoneUnlockLevels.city, 'player reaches city level');
+    assert(Game.State.get().world.unlockedZones.includes('city'), 'city should unlock at configured level');
+    assert(!Game.State.get().world.unlockedZones.includes('castle'), 'castle should stay locked before its configured level');
+
+    Game.State.init(freshState());
+    Game.Systems.Progression.grantExp(expToReachLevel(zoneUnlockLevels.castle));
+    assertEqual(Game.State.get().player.level, zoneUnlockLevels.castle, 'player reaches castle level');
+    assert(Game.State.get().world.unlockedZones.includes('city'), 'lower unlocked zone should still be included');
+    assert(Game.State.get().world.unlockedZones.includes('castle'), 'castle should unlock at configured level');
   });
 
   tests.forEach(function each(entry) {

@@ -24,10 +24,12 @@ Game.Scenes.Overworld = (function () {
     render() {
       const state = Game.State.get();
       const zone = Game.Data.Zones.get(state.world.currentZone);
+      if (Game.Systems.QuestionBoxes) Game.Systems.QuestionBoxes.ensure(zone.id);
       const bgUrl = Game.Render.AssetLoader.zoneBackground(zone.id);
+      const context = getContextPrompt(state, zone);
       return `<div class="game-shell screen--${zone.theme}" style="background-image:linear-gradient(rgba(24,33,43,.18), rgba(24,33,43,.18)), url('${bgUrl}'); background-size:cover; background-position:center;">
         ${Game.Render.HUD.render(state, message)}
-        <section class="world-wrap">${Game.Render.Map.render(state)}</section>
+        <section class="world-wrap">${Game.Render.Map.render(state, context)}</section>
         ${Game.Scenes.Base.controls()}
         ${menuOpen ? renderMenu() : ''}
       </div>`;
@@ -124,8 +126,36 @@ Game.Scenes.Overworld = (function () {
       });
       return;
     }
+    const box = findNearbyBox(zone.id, pos);
+    if (box) {
+      Game.SceneManager.goTo('quiz', {
+        source: 'questionBox',
+        zoneId: zone.id,
+        boxId: box.id
+      });
+      return;
+    }
     message = 'ไม่มีอะไรให้ใช้ A ตรงนี้';
     Game.SceneManager.requestRender();
+  }
+
+  function getContextPrompt(state, zone) {
+    const pos = state.world.position;
+    if (zone.shop && zone.shop.x === pos.x && zone.shop.y === pos.y) {
+      return { text: 'A เปิดร้านค้า', variant: 'shop' };
+    }
+    const portal = Game.Data.Zones.portalAt(zone.id, pos.x, pos.y);
+    if (portal) {
+      if (state.player.level < portal.requiredLevel) {
+        return { text: `ต้อง Lv ${portal.requiredLevel}`, variant: 'locked' };
+      }
+      return { text: 'A เข้า portal', variant: 'portal' };
+    }
+    const npc = findNearbyNpc(zone.id, pos);
+    if (npc) return { text: `A คุยกับ ${npc.name}`, variant: 'npc' };
+    const box = findNearbyBox(zone.id, pos);
+    if (box) return { text: 'A เปิดกล่องโจทย์', variant: 'question-box' };
+    return { text: 'หาและเปิดกล่องโจทย์', variant: 'hint' };
   }
 
   function findNearbyNpc(zoneId, pos) {
@@ -134,6 +164,10 @@ Game.Scenes.Overworld = (function () {
       if (npc) return npc;
     }
     return null;
+  }
+
+  function findNearbyBox(zoneId, pos) {
+    return Game.Systems.QuestionBoxes ? Game.Systems.QuestionBoxes.nearbyBox(zoneId, pos) : null;
   }
 
   return scene;

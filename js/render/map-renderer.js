@@ -15,7 +15,7 @@ Game.Render.Map = (function () {
     city_grass: encodeSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#8fd694"/><circle cx="10" cy="10" r="2" fill="#5f9f67"/><circle cx="31" cy="14" r="2" fill="#5f9f67"/><circle cx="18" cy="32" r="2" fill="#5f9f67"/><circle cx="38" cy="36" r="2" fill="#5f9f67"/></svg>`),
     castle_grass: encodeSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#d9a5cf"/><path d="M0 12 H48 M0 24 H48 M0 36 H48" stroke="#ffffff2b"/><circle cx="12" cy="14" r="2" fill="#bc6db9"/><circle cx="34" cy="34" r="2" fill="#bc6db9"/></svg>`),
     forest_path: encodeSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#a9dc67"/><path d="M0 30 C12 24 36 40 48 31" stroke="#89c457" stroke-width="7"/></svg>`),
-    city_path: encodeSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#ffe38d"/><path d="M0 32 H48 M0 16 H48" stroke="#f0c65b" stroke-width="6"/><path d="M8 0 V48 M24 0 V48 M40 0 V48" stroke="#ffffff33"/></svg>`),
+    city_path: encodeSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#ffe89e"/><path d="M0 32 H48 M0 16 H48" stroke="#e6bf5a" stroke-width="4" opacity=".62"/><path d="M8 0 V48 M24 0 V48 M40 0 V48" stroke="#805f1f" stroke-opacity=".08"/></svg>`),
     castle_path: encodeSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#d4bef6"/><path d="M0 0 L48 48 M48 0 L0 48" stroke="#b69be0"/><path d="M0 24 H48 M24 0 V48" stroke="#c3ade8"/></svg>`),
     portal: encodeSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#9fd5ff"/><circle cx="24" cy="24" r="16" fill="none" stroke="#1864ab" stroke-width="4"/><circle cx="24" cy="24" r="8" fill="#1c7ed6"/><circle cx="24" cy="24" r="3" fill="#74c0fc"/></svg>`),
     shop: encodeSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#ffe066"/><rect x="9" y="14" width="30" height="23" fill="#fff" stroke="#18212b" stroke-width="2"/><path d="M8 14 L24 3 L40 14" fill="#ff6b6b" stroke="#18212b" stroke-width="2"/></svg>`),
@@ -36,7 +36,7 @@ Game.Render.Map = (function () {
     return `${theme}_path`;
   }
 
-  function render(state) {
+  function render(state, context) {
     const zone = Game.Data.Zones.get(state.world.currentZone);
     const width = zone.tiles[0].length * TILE;
     const height = zone.tiles.length * TILE;
@@ -53,6 +53,7 @@ Game.Render.Map = (function () {
       }
     }
 
+    const questionBoxSvg = Game.Systems.QuestionBoxes ? Game.Systems.QuestionBoxes.all(zone.id).map(renderQuestionBox).join('') : '';
     const npcSvg = zone.npcs.map(renderNpc).join('');
     const px = state.world.position.x * TILE + 12;
     const py = state.world.position.y * TILE - 13;
@@ -77,13 +78,27 @@ Game.Render.Map = (function () {
           ${baseTiles.join('')}
           ${shadows.join('')}
         </g>
+        ${questionBoxSvg}
         ${npcSvg}
         <g transform="translate(${px} ${py})">${Game.Render.Character.render(state.player, state.inventory, 0.9)}</g>
+        ${renderContextPrompt(context, playerX, playerY)}
         <g transform="translate(${fgParallaxX.toFixed(2)} ${fgParallaxY.toFixed(2)})">
           ${foregroundProps.join('')}
         </g>
       </svg>
     </div>`;
+  }
+
+  function renderContextPrompt(context, x, y) {
+    if (!context || !context.text) return '';
+    const text = Game.Infra.Util.escapeHtml(context.text);
+    const width = Math.max(88, Math.min(190, 18 + text.length * 8));
+    const left = Math.max(8, x - width / 2);
+    const top = Math.max(8, y - 60);
+    return `<g class="map-prompt map-prompt--${context.variant || 'hint'}" transform="translate(${left.toFixed(1)} ${top.toFixed(1)})">
+      <rect x="0" y="0" width="${width}" height="24" rx="12"/>
+      <text x="${width / 2}" y="16" text-anchor="middle">${text}</text>
+    </g>`;
   }
 
   function renderTile(zone, tile, x, y) {
@@ -109,8 +124,8 @@ Game.Render.Map = (function () {
 
     const shadow = `<rect x="${xx}" y="${yy + TILE - 11}" width="${TILE}" height="11" fill="url(#tileShade)"/>`;
 
-    const overlay = `${tile === 'p' ? `<circle cx="${xx + 24}" cy="${yy + 24}" r="17" fill="none" stroke="#0b3d77" stroke-width="2.4"/><path d="M${xx + 13} ${yy + 24} H${xx + 35}" stroke="#d0ebff" stroke-width="2.5"/>` : ''}
-      ${tile === 's' ? `<rect x="${xx + 8}" y="${yy + 8}" width="32" height="30" rx="2" fill="none" stroke="#18212b" stroke-width="2.5"/><text x="${xx + 24}" y="${yy + 31}" font-size="10" text-anchor="middle" fill="#18212b" font-weight="700">SHOP</text>` : ''}
+    const overlay = `${tile === 'p' ? `<g class="interactable interactable--portal"><circle cx="${xx + 24}" cy="${yy + 24}" r="22" fill="#74c0fc" opacity=".18"/><circle cx="${xx + 24}" cy="${yy + 24}" r="17" fill="none" stroke="#0b3d77" stroke-width="2.4"/><path d="M${xx + 13} ${yy + 24} H${xx + 35}" stroke="#d0ebff" stroke-width="2.5"/></g>` : ''}
+      ${tile === 's' ? `<g class="interactable interactable--shop"><rect x="${xx + 4}" y="${yy + 4}" width="40" height="38" rx="5" fill="#ffec99" opacity=".28"/><rect x="${xx + 8}" y="${yy + 8}" width="32" height="30" rx="2" fill="none" stroke="#18212b" stroke-width="2.5"/><text x="${xx + 24}" y="${yy + 31}" font-size="10" text-anchor="middle" fill="#18212b" font-weight="700">SHOP</text></g>` : ''}
       ${tile === '#' ? `<rect x="${xx + 2}" y="${yy + 2}" width="44" height="44" fill="none" stroke="#18212b" stroke-width="2"/>` : ''}`;
 
     const fg = tile === 'g' && (x + y) % 4 === 0
@@ -126,7 +141,21 @@ Game.Render.Map = (function () {
   function renderNpc(npc) {
     const x = npc.x * TILE + 6;
     const y = npc.y * TILE + 2;
-    return `<g transform="translate(${x} ${y})">${Game.Render.Character.renderNpc(npc, 0.76)}</g>`;
+    return `<g class="interactable interactable--npc" transform="translate(${x} ${y})">
+      <ellipse cx="18" cy="41" rx="17" ry="5" fill="#ffffff" opacity=".34"/>
+      ${Game.Render.Character.renderNpc(npc, 0.76)}
+    </g>`;
+  }
+
+  function renderQuestionBox(box) {
+    const x = box.x * TILE;
+    const y = box.y * TILE;
+    return `<g class="interactable interactable--question-box" transform="translate(${x} ${y})">
+      <ellipse cx="24" cy="40" rx="16" ry="5" fill="#000" opacity=".18"/>
+      <rect x="11" y="10" width="26" height="25" rx="4" fill="#ff922b" stroke="#18212b" stroke-width="3"/>
+      <path d="M13 18 H35 M18 10 V35 M30 10 V35" stroke="#ffd43b" stroke-width="2" opacity=".85"/>
+      <text x="24" y="29" text-anchor="middle" font-size="22" font-weight="900" fill="#fff" stroke="#18212b" stroke-width="1.8" paint-order="stroke">?</text>
+    </g>`;
   }
 
   return Object.freeze({ render });

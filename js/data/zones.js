@@ -4,13 +4,15 @@ Game.Data = Game.Data || {};
 Game.Data.Zones = (function () {
   'use strict';
 
+  const unlockLevels = Game.Config.world.zoneUnlockLevels;
+
   const zones = {
     forest: {
       id: 'forest',
       name: 'ป่ามหัศจรรย์',
       theme: 'forest',
       multiplier: 1,
-      requiredLevel: 1,
+      requiredLevel: unlockLevels.forest,
       spawnPoint: { x: 2, y: 8 },
       tiles: [
         '###############',
@@ -25,7 +27,7 @@ Game.Data.Zones = (function () {
         '###############'
       ],
       portals: [
-        { x: 13, y: 5, targetZone: 'city', requiredLevel: 5 }
+        { x: 13, y: 5, targetZone: 'city', requiredLevel: unlockLevels.city }
       ],
       npcs: [
         { id: 'forest_npc_01', name: 'ครูต้นไม้', x: 7, y: 3, type: 'oneTime', bonusMultiplier: 2, greeting: 'ช่วยแก้โจทย์บวกให้ครูต้นไม้หน่อย' },
@@ -42,7 +44,7 @@ Game.Data.Zones = (function () {
       name: 'เมืองตัวเลข',
       theme: 'city',
       multiplier: 2,
-      requiredLevel: 5,
+      requiredLevel: unlockLevels.city,
       spawnPoint: { x: 6, y: 1 },
       tiles: [
         '###############',
@@ -57,8 +59,8 @@ Game.Data.Zones = (function () {
         '###############'
       ],
       portals: [
-        { x: 6, y: 1, targetZone: 'forest', requiredLevel: 1 },
-        { x: 12, y: 7, targetZone: 'castle', requiredLevel: 10 }
+        { x: 6, y: 1, targetZone: 'forest', requiredLevel: unlockLevels.forest },
+        { x: 12, y: 7, targetZone: 'castle', requiredLevel: unlockLevels.castle }
       ],
       shop: { x: 3, y: 3 },
       npcs: [
@@ -76,7 +78,7 @@ Game.Data.Zones = (function () {
       name: 'ถ้ำปราสาท',
       theme: 'castle',
       multiplier: 3,
-      requiredLevel: 10,
+      requiredLevel: unlockLevels.castle,
       spawnPoint: { x: 2, y: 7 },
       tiles: [
         '###############',
@@ -91,7 +93,7 @@ Game.Data.Zones = (function () {
         '###############'
       ],
       portals: [
-        { x: 1, y: 7, targetZone: 'city', requiredLevel: 5 }
+        { x: 1, y: 7, targetZone: 'city', requiredLevel: unlockLevels.city }
       ],
       npcs: [
         { id: 'castle_npc_01', name: 'นักวัดมุม', x: 7, y: 3, type: 'repeatable', bonusMultiplier: 1, greeting: 'เรขาคณิตคือกุญแจของปราสาท' },

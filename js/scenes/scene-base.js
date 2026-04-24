@@ -14,9 +14,9 @@ Game.Scenes.Base = (function () {
       </div>
       <div class="mini-map-note">WASD/ลูกศร เดิน | Enter/Z = A | Esc/X = B | M = Menu</div>
       <div class="action-pad">
-        <button data-action="menu">Menu</button>
-        <button data-action="cancel">B</button>
-        <button class="primary" data-action="confirm">A</button>
+        <button class="menu-button" data-action="menu" aria-label="เมนู">Menu</button>
+        <button class="action-button action-button--secondary" data-action="cancel" aria-label="ปุ่ม B">B</button>
+        <button class="action-button primary" data-action="confirm" aria-label="ปุ่ม A">A</button>
       </div>
     </footer>`;
   }
